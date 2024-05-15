@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Tutor App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ttkbootstrap/1.0.0/css/flatly.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            padding: 20px;
+        }
+        .exercise, .editor, .output {
+            background-color: #fff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .scrolledtext {
+            width: 100%;
+            height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: monospace;
+            white-space: pre-wrap; /* Preserve indentation and line breaks */
+        }
+        .console {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="exercise-select">
+            <label for="exerciseSelect">Selecione o Exercício:</label>
+            <select id="exerciseSelect">
+                <!-- Options will be populated by JavaScript -->
+            </select>
+            <button onclick="goToExercise()">Ir</button>
+        </div>
+        <div class="exercise">
+            <h2 id="exerciseTitle"></h2>
+            <p id="exerciseDescription"></p>
+        </div>
+        <div class="editor">
+            <h3>Seu Código:</h3>
+            <div class="scrolledtext" id="codeEditor" contenteditable="true"></div>
+            <button onclick="checkCode()">Submeter</button>
+            <button onclick="showHint()">Dica</button>
+        </div>
+        <div class="output">
+            <h3>Código Correto:</h3>
+            <div class="scrolledtext" id="correctCodeDisplay"></div>
+        </div>
+        <div class="console">
+            <h3>Console Python:</h3>
+            <iframe src="https://trinket.io/embed/python3/a5bd54189b" width="100%" height="356" frameborder="0" marginwidth="0" marginheight="0" allowfullscreen></iframe>
+        </div>
+    </div>
+    <script>
+        const exercises = [
+            {
+                title: "Print Statement",
+                description: "Escreva um código que imprima 'Olá, Mundo!'",
+                correctCode: "print('Olá, Mundo!')",
+                hint: "Use a função print() para exibir uma mensagem na tela. Por exemplo, para exibir 'Olá, Mundo!', você deve usar print('Olá, Mundo!')."
+            },
+            {
+                title: "Variáveis",
+                description: "Crie uma variável x e atribua o valor 5 a ela",
+                correctCode: "x = 5",
+                hint: "Variáveis são usadas para armazenar valores. Para criar uma variável, escolha um nome e use o operador de atribuição '='. Por exemplo, x = 5 cria uma variável chamada x e atribui o valor 5 a ela."
+            },
+            {
+                title: "Estruturas de Controle",
+                description: "Escreva um if statement que verifica se x é maior que 2",
+                correctCode: "x = 5\nif x > 2:\n    print('x é maior que 2')",
+                hint: "Estruturas de controle são usadas para tomar decisões no código. Use a palavra-chave if para criar uma condição. Por exemplo, if x > 2: verifica se x é maior que 2. Lembre-se de usar dois pontos ':' e de identar o bloco de código dentro do if."
+            },
+            {
+                title: "Laços de Repetição",
+                description: "Escreva um for loop que imprime os números de 1 a 5",
+                correctCode: "for i in range(1, 6):\n    print(i)",
+                hint: "Laços de repetição são usados para executar um bloco de código várias vezes. Use a palavra-chave for para criar um laço. Por exemplo, for i in range(1, 6): itera sobre os números de 1 a 5. Lembre-se de usar dois pontos ':' e de identar o bloco de código dentro do for."
+            },
+            {
+                title: "Funções",
+                description: "Defina uma função que retorna o dobro de um número",
+                correctCode: "def dobro(n):\n    return n * 2",
+                hint: "Funções são blocos de código reutilizáveis. Use a palavra-chave def para definir uma função. Por exemplo, def dobro(n): cria uma função chamada dobro que aceita um argumento n e retorna o dobro de n. Lembre-se de usar dois pontos ':' e de identar o bloco de código dentro da função."
+            },
+            {
+                title: "Listas",
+                description: "Crie uma lista com os números de 1 a 5",
+                correctCode: "lista = [1, 2, 3, 4, 5]",
+                hint: "Listas são usadas para armazenar múltiplos valores em uma única variável. Use colchetes [] para definir uma lista. Por exemplo, lista = [1, 2, 3, 4, 5] cria uma lista com os números de 1 a 5."
+            },
+            {
+                title: "Dicionários",
+                description: "Crie um dicionário com as chaves 'nome' e 'idade'",
+                correctCode: "dicionario = {'nome': 'João', 'idade': 25}",
+                hint: "Dicionários são usados para armazenar pares de chave-valor. Use chaves {} para definir um dicionário. Por exemplo, dicionario = {'nome': 'João', 'idade': 25} cria um dicionário com as chaves 'nome' e 'idade' e seus respectivos valores."
+            },
+            {
+                title: "Classes",
+                description: "Crie uma classe Pessoa com um método que imprime 'Olá'",
+                correctCode: "class Pessoa:\n    def ola(self):\n        print('Olá')",
+                hint: "Classes são usadas para criar objetos. Use a palavra-chave class para definir uma classe. Por exemplo, class Pessoa: cria uma classe chamada Pessoa. Métodos são funções definidas dentro de uma classe. Por exemplo, def ola(self): cria um método que imprime 'Olá'. Lembre-se de usar dois pontos ':' e de identar o bloco de código dentro da classe e do método."
+            },
+            {
+                title: "Herança",
+                description: "Crie uma classe Estudante que herda de Pessoa",
+                correctCode: "class Estudante(Pessoa):\n    pass",
+                hint: "Herança é usada para criar uma nova classe com base em uma classe existente. Use parênteses para indicar herança. Por exemplo, class Estudante(Pessoa): cria uma classe Estudante que herda de Pessoa. A palavra-chave pass é usada como um placeholder para indicar que não há implementação adicional no momento."
+            },
+            {
+                title: "Módulos",
+                description: "Importe o módulo math e use a função sqrt",
+                correctCode: "import math\nprint(math.sqrt(16))",
+                hint: "Módulos são bibliotecas de código que podem ser importadas para seu programa. Use a palavra-chave import para importar um módulo. Por exemplo, import math importa o módulo math. Para usar uma função do módulo, prefixe-a com o nome do módulo. Por exemplo, math.sqrt(16) usa a função sqrt do módulo math para calcular a raiz quadrada de 16."
+            },
+            {
+                title: "Manipulação de Strings",
+                description: "Converta a string 'python' para maiúsculas",
+                correctCode: "s = 'python'\nresultado = s.upper()",
+                hint: "Strings são sequências de caracteres. Métodos de string são usados para manipular strings. Use o método upper() para converter uma string para maiúsculas. Por exemplo, s.upper() converte a string s para maiúsculas."
+            },
+            {
+                title: "List Comprehension",
+                description: "Crie uma lista com os quadrados dos números de 1 a 5",
+                correctCode: "quadrados = [x**2 for x in range(1, 6)]",
+                hint: "List comprehension é uma maneira concisa de criar listas. Use colchetes [] e uma expressão seguida de um laço for. Por exemplo, [x**2 for x in range(1, 6)] cria uma lista com os quadrados dos números de 1 a 5."
+            },
+            {
+                title: "Funções Lambda",
+                description: "Crie uma função lambda que retorna o triplo de um número",
+                correctCode: "triplo = lambda x: x * 3",
+                hint: "Funções lambda são funções anônimas definidas usando a palavra-chave lambda. Por exemplo, lambda x: x * 3 cria uma função lambda que retorna o triplo de x."
+            },
+            {
+                title: "Map, Filter, Reduce",
+                description: "Use map para dobrar os números de uma lista",
+                correctCode: "numeros = [1, 2, 3, 4, 5]\ndobrados = list(map(lambda x: x * 2, numeros))",
+                hint: "A função map() aplica uma função a todos os itens de uma lista. Use lambda para definir a função inline. Por exemplo, map(lambda x: x * 2, numeros) aplica a função lambda que dobra o valor de x a todos os itens da lista numeros."
+            },
+            {
+                title: "Expressões Regulares",
+                description: "Encontre todas as ocorrências de 'a' em uma string",
+                correctCode: "import re\nresultado = re.findall('a', 'banana')",
+                hint: "Expressões regulares são usadas para procurar padrões em strings. Use o módulo re e a função findall() para encontrar todas as ocorrências de um padrão. Por exemplo, re.findall('a', 'banana') encontra todas as ocorrências de 'a' na string 'banana'."
+            },
+            {
+                title: "Manejo de Exceções",
+                description: "Capture uma exceção de divisão por zero",
+                correctCode: "try:\n    1 / 0\nexcept ZeroDivisionError:\n    print('Divisão por zero não é permitida')",
+                hint: "Use blocos try e except para capturar exceções. Coloque o código que pode gerar uma exceção dentro do bloco try e o código de tratamento de exceções dentro do bloco except. Por exemplo, try: 1 / 0 except ZeroDivisionError: print('Divisão por zero não é permitida') captura a exceção de divisão por zero."
+            },
+            {
+                title: "Métodos de Lista",
+                description: "Adicione o número 6 a uma lista",
+                correctCode: "lista = [1, 2, 3, 4, 5]\nlista.append(6)",
+                hint: "Métodos de listas são usados para manipular listas. Use o método append() para adicionar um elemento ao final da lista. Por exemplo, lista.append(6) adiciona o número 6 à lista."
+            },
+            {
+                title: "Manipulação de Arquivos",
+                description: "Abra um arquivo chamado 'exemplo.txt' em modo de leitura",
+                correctCode: "arquivo = open('exemplo.txt', 'r')",
+                hint: "Use a função open() para abrir arquivos. O primeiro argumento é o nome do arquivo e o segundo argumento é o modo de abertura. Por exemplo, open('exemplo.txt', 'r') abre o arquivo 'exemplo.txt' em modo de leitura."
+            },
+            {
+                title: "Iteradores",
+                description: "Crie um iterador que retorna os números de 1 a 3",
+                correctCode: "class MeuIterador:\n    def __iter__(self):\n        self.n = 1\n        return self\n\n    def __next__(self):\n        if self.n <= 3:\n            resultado = self.n\n            self.n += 1\n            return resultado\n        else:\n            raise StopIteration",
+                hint: "Para criar um iterador, você precisa definir dois métodos: __iter__() e __next__(). O método __iter__() inicializa o iterador, e o método __next__() define a lógica para retornar os próximos valores. Quando não houver mais valores, __next__() deve gerar a exceção StopIteration."
+            },
+            {
+                title: "Geradores",
+                description: "Crie um gerador que retorna os números de 1 a 3",
+                correctCode: "def meu_gerador():\n    yield 1\n    yield 2\n    yield 3",
+                hint: "Geradores são uma maneira simples e eficiente de criar iteradores. Use a palavra-chave yield para retornar valores um de cada vez. A execução da função é pausada e pode ser retomada a partir de onde foi pausada."
+            },
+            {
+                title: "Decoradores",
+                description: "Crie um decorador que imprime 'Iniciando...' antes de executar a função",
+                correctCode: "def meu_decorador(func):\n    def wrapper():\n        print('Iniciando...')\n        func()\n    return wrapper\n\n@meu_decorador\ndef minha_funcao():\n    print('Função executada!')",
+                hint: "Decoradores são uma maneira de modificar ou estender o comportamento de funções. Defina uma função decoradora que envolva a função original. Use a sintaxe @decorador para aplicar o decorador à função."
+            },
+            {
+                title: "Funções Aninhadas",
+                description: "Crie uma função dentro de outra função",
+                correctCode: "def externa():\n    print('Função externa')\n    def interna():\n        print('Função interna')\n    interna()",
+                hint: "Funções aninhadas são funções definidas dentro de outras funções. Elas podem acessar variáveis da função externa. Defina a função interna dentro da função externa e chame a função interna dentro da externa."
+            },
+            {
+                title: "Escopo de Variáveis",
+                description: "Demonstre o uso de variáveis locais e globais",
+                correctCode: "x = 'global'\n\ndef funcao():\n    x = 'local'\n    print(x)\n\nfuncao()\nprint(x)",
+                hint: "Variáveis definidas fora de qualquer função têm escopo global, enquanto variáveis definidas dentro de uma função têm escopo local. Modificar uma variável local não afeta a variável global com o mesmo nome."
+            },
+            {
+                title: "Argumentos Padrão",
+                description: "Crie uma função com um argumento padrão",
+                correctCode: "def saudacao(nome='Mundo'):\n    print(f'Olá, {nome}!')",
+                hint: "Argumentos padrão permitem que funções sejam chamadas com menos argumentos do que o número de parâmetros. Defina um valor padrão para um parâmetro usando a sintaxe parâmetro=valor."
+            },
+            {
+                title: "Argumentos Arbitrários",
+                description: "Crie uma função que aceita um número arbitrário de argumentos",
+                correctCode: "def soma(*args):\n    return sum(args)",
+                hint: "Argumentos arbitrários permitem que uma função aceite um número variável de argumentos. Use *args para capturar argumentos posicionais arbitrários em uma tupla."
+            },
+            {
+                title: "Keyword Arguments",
+                description: "Crie uma função que aceita argumentos nomeados arbitrários",
+                correctCode: "def exibir_info(**kwargs):\n    for chave, valor in kwargs.items():\n        print(f'{chave}: {valor}')",
+                hint: "Keyword arguments permitem que uma função aceite argumentos nomeados arbitrários. Use **kwargs para capturar argumentos nomeados arbitrários em um dicionário."
+            },
+            {
+                title: "Listas e Dicionários",
+                description: "Crie uma lista de dicionários",
+                correctCode: "pessoas = [\n    {'nome': 'Ana', 'idade': 25},\n    {'nome': 'João', 'idade': 30}\n]",
+                hint: "Listas podem conter dicionários e vice-versa. Crie uma lista e adicione dicionários como elementos da lista."
+            },
+            {
+                title: "Funções Recursivas",
+                description: "Crie uma função que calcula o fatorial de um número",
+                correctCode: "def fatorial(n):\n    if n == 1:\n        return 1\n    else:\n        return n * fatorial(n - 1)",
+                hint: "Funções recursivas são funções que chamam a si mesmas. Certifique-se de definir uma condição base para evitar recursão infinita. A condição base aqui é quando n é igual a 1."
+            },
+            {
+                title: "Funções Anônimas",
+                description: "Use uma função lambda para dobrar um número",
+                correctCode: "dobro = lambda x: x * 2\nprint(dobro(5))",
+                hint: "Funções lambda são usadas para criar pequenas funções anônimas. A sintaxe é lambda argumentos: expressão."
+            }
+        ];
+
+        let currentExercise = 0;
+
+        function loadExercises() {
+            const exerciseSelect = document.getElementById('exerciseSelect');
+            exercises.forEach((exercise, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.text = `Exercício ${index + 1}`;
+                exerciseSelect.add(option);
+            });
+        }
+
+        function loadExercise() {
+            const exercise = exercises[currentExercise];
+            document.getElementById('exerciseTitle').textContent = exercise.title;
+            document.getElementById('exerciseDescription').textContent = exercise.description;
+            document.getElementById('codeEditor').innerText = '';
+            document.getElementById('correctCodeDisplay').innerText = '';
+        }
+
+        function goToExercise() {
+            const exerciseSelect = document.getElementById('exerciseSelect');
+            currentExercise = exerciseSelect.value;
+            loadExercise();
+        }
+
+        function checkCode() {
+            const userCode = document.getElementById('codeEditor').innerText.trim();
+            const correctCode = exercises[currentExercise].correctCode;
+            if (userCode === correctCode) {
+                alert('Parabéns! Você completou o exercício corretamente.');
+                currentExercise = (currentExercise + 1) % exercises.length;
+                loadExercise();
+                document.getElementById('exerciseSelect').value = currentExercise;
+            } else {
+                document.getElementById('correctCodeDisplay').innerText = correctCode;
+                alert('O código está incorreto. Tente novamente.');
+            }
+        }
+
+        function showHint() {
+            const hint = exercises[currentExercise].hint;
+            alert(hint);
+        }
+
+        // Initialize the app
+        loadExercises();
+        loadExercise();
+    </script>
+</body>
+</html>
